@@ -1,34 +1,30 @@
 import mongoose from 'mongoose';
 
-const projectSchema = new mongoose.Schema({
+const clientSchema = new mongoose.Schema({
   name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  designation: {
     type: String,
     required: true,
     trim: true
   },
   description: {
     type: String,
-    default: ''
+    required: true
   },
   image: {
     type: String,
     default: ''
-  },
-  category: {
-    type: String,
-    default: ''
-  },
-  status: {
-    type: String,
-    enum: ['active', 'completed', 'archived'],
-    default: 'active'
   }
 }, {
   timestamps: true
 });
 
 // Transform _id to id for frontend compatibility
-projectSchema.set('toJSON', {
+clientSchema.set('toJSON', {
   transform: function(doc, ret) {
     ret.id = ret._id;
     delete ret._id;
@@ -37,4 +33,5 @@ projectSchema.set('toJSON', {
   }
 });
 
-export default mongoose.model('Project', projectSchema);
+export default mongoose.model('Client', clientSchema);
+

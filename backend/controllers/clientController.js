@@ -1,4 +1,4 @@
-import Project from '../models/Project.js';
+import Client from '../models/Client.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
@@ -8,53 +8,53 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../uploads/projects');
+const uploadsDir = path.join(__dirname, '../uploads/clients');
 fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
 
-// Get all projects
-export const getProjects = async (req, res, next) => {
+// Get all clients
+export const getClients = async (req, res, next) => {
   try {
-    const projects = await Project.find().sort({ createdAt: -1 });
+    const clients = await Client.find().sort({ createdAt: -1 });
     res.json({
       success: true,
-      data: projects
+      data: clients
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get single project
-export const getProject = async (req, res, next) => {
+// Get single client
+export const getClient = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const project = await Project.findById(id);
+    const client = await Client.findById(id);
     
-    if (!project) {
+    if (!client) {
       return res.status(404).json({
         success: false,
-        message: 'Project not found'
+        message: 'Client not found'
       });
     }
 
     res.json({
       success: true,
-      data: project
+      data: client
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Create project
-export const createProject = async (req, res, next) => {
+// Create client
+export const createClient = async (req, res, next) => {
   try {
-    const { name, description, category } = req.body;
+    const { name, designation, description } = req.body;
 
-    if (!name) {
+    if (!name || !designation || !description) {
       return res.status(400).json({
         success: false,
-        message: 'Project name is required'
+        message: 'Name, designation, and description are required'
       });
     }
 
@@ -71,55 +71,55 @@ export const createProject = async (req, res, next) => {
       imagePath = `${baseUrl}${relativePath}`;
     }
 
-    const project = new Project({
+    const client = new Client({
       name,
-      description: description || '',
-      category: category || '',
+      designation,
+      description,
       image: imagePath
     });
 
-    await project.save();
+    await client.save();
 
     res.status(201).json({
       success: true,
-      data: project
+      data: client
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Update project
-export const updateProject = async (req, res, next) => {
+// Update client
+export const updateClient = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const project = await Project.findById(id);
+    const client = await Client.findById(id);
 
-    if (!project) {
+    if (!client) {
       return res.status(404).json({
         success: false,
-        message: 'Project not found'
+        message: 'Client not found'
       });
     }
 
-    const { name, description, category } = req.body;
+    const { name, designation, description } = req.body;
 
-    if (name) project.name = name;
-    if (description !== undefined) project.description = description;
-    if (category !== undefined) project.category = category;
+    if (name) client.name = name;
+    if (designation) client.designation = designation;
+    if (description) client.description = description;
 
     // Handle image update
     if (req.file) {
       // Delete old image if exists
-      if (project.image) {
+      if (client.image) {
         try {
           // Extract path from full URL
-          const urlPath = new URL(project.image).pathname;
+          const urlPath = new URL(client.image).pathname;
           const oldImagePath = path.join(__dirname, '..', urlPath);
           await fs.unlink(oldImagePath).catch(() => {});
         } catch (err) {
           // If it's already a relative path
-          const oldImagePath = path.join(__dirname, '..', project.image);
+          const oldImagePath = path.join(__dirname, '..', client.image);
           await fs.unlink(oldImagePath).catch(() => {});
         }
       }
@@ -131,62 +131,55 @@ export const updateProject = async (req, res, next) => {
         uploadsDir
       );
       const baseUrl = req.protocol + '://' + req.get('host');
-      project.image = `${baseUrl}${relativePath}`;
+      client.image = `${baseUrl}${relativePath}`;
     }
 
-    await project.save();
+    await client.save();
 
     res.json({
       success: true,
-      data: project
+      data: client
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Delete project
-export const deleteProject = async (req, res, next) => {
+// Delete client
+export const deleteClient = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const project = await Project.findById(id);
+    const client = await Client.findById(id);
 
-    if (!project) {
+    if (!client) {
       return res.status(404).json({
         success: false,
-        message: 'Project not found'
+        message: 'Client not found'
       });
     }
 
     // Delete image if exists
-    if (project.image) {
+    if (client.image) {
       try {
         // Extract path from full URL
-        const urlPath = new URL(project.image).pathname;
+        const urlPath = new URL(client.image).pathname;
         const imagePath = path.join(__dirname, '..', urlPath);
         await fs.unlink(imagePath).catch(() => {});
       } catch (err) {
         // If it's already a relative path
-        const imagePath = path.join(__dirname, '..', project.image);
+        const imagePath = path.join(__dirname, '..', client.image);
         await fs.unlink(imagePath).catch(() => {});
       }
     }
 
-    await Project.findByIdAndDelete(id);
+    await Client.findByIdAndDelete(id);
 
     res.json({
       success: true,
-      message: 'Project deleted successfully'
+      message: 'Client deleted successfully'
     });
   } catch (error) {
     next(error);
   }
 };
-
-
-
-
-
-
-
 

@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo, useMemo } from 'react';
 import { projectsAPI, clientsAPI, contactAPI, newsletterAPI } from '../../services/api';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Box, MeshDistortMaterial } from '@react-three/drei';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
-const FloatingCube = ({ position, color }) => {
+// Memoized 3D cube component
+const FloatingCube = memo(({ position, color }) => {
   return (
     <Box position={position} args={[1, 1, 1]}>
       <MeshDistortMaterial
@@ -17,10 +19,23 @@ const FloatingCube = ({ position, color }) => {
       />
     </Box>
   );
-};
+});
 
-const StatCard = ({ label, value, link, color, icon, index }) => {
+FloatingCube.displayName = 'FloatingCube';
+
+// Memoized stat card component
+const StatCard = memo(({ label, value, link, color, icon, index }) => {
   const [hovered, setHovered] = useState(false);
+  
+  // Memoize gradient class
+  const gradientClass = useMemo(() => {
+    switch (color) {
+      case 'blue': return 'bg-gradient-to-br from-blue-500 to-blue-600';
+      case 'green': return 'bg-gradient-to-br from-green-500 to-green-600';
+      case 'orange': return 'bg-gradient-to-br from-orange-500 to-orange-600';
+      default: return 'bg-gradient-to-br from-purple-500 to-purple-600';
+    }
+  }, [color]);
 
   return (
     <motion.div
@@ -35,24 +50,25 @@ const StatCard = ({ label, value, link, color, icon, index }) => {
         to={link}
         className="block bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 relative overflow-hidden group"
       >
-        {/* 3D Background Effect */}
-        <div className="absolute top-0 right-0 w-32 h-32 opacity-10 pointer-events-none">
-          <Canvas camera={{ position: [0, 0, 3] }}>
-            <ambientLight intensity={0.5} />
-            <pointLight position={[5, 5, 5]} />
-            <FloatingCube position={[0, 0, 0]} color={color} />
-            <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1} />
-          </Canvas>
-        </div>
+        {/* 3D Background Effect - Only render on hover for performance */}
+        {hovered && (
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10 pointer-events-none" style={{ willChange: 'transform' }}>
+            <Canvas 
+              camera={{ position: [0, 0, 3] }}
+              performance={{ min: 0.5 }}
+              dpr={[1, 1.5]}
+            >
+              <ambientLight intensity={0.5} />
+              <pointLight position={[5, 5, 5]} />
+              <FloatingCube position={[0, 0, 0]} color={color} />
+              <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={1} />
+            </Canvas>
+          </div>
+        )}
 
         {/* Animated Gradient Background */}
         <motion.div
-          className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${
-            color === 'blue' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
-            color === 'green' ? 'bg-gradient-to-br from-green-500 to-green-600' :
-            color === 'orange' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
-            'bg-gradient-to-br from-purple-500 to-purple-600'
-          }`}
+          className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${gradientClass}`}
           animate={{
             backgroundPosition: hovered ? ['0% 0%', '100% 100%'] : '0% 0%',
           }}
@@ -112,7 +128,9 @@ const StatCard = ({ label, value, link, color, icon, index }) => {
       </Link>
     </motion.div>
   );
-};
+});
+
+StatCard.displayName = 'StatCard';
 
 const QuickActionCard = ({ title, icon, link, description, index }) => {
   return (
@@ -243,6 +261,13 @@ const AdminDashboard = () => {
     },
   ];
 
+  // Memoize stat cards to prevent unnecessary recalculations
+  const memoizedStatCards = useMemo(() => statCards, [stats]);
+
+  if (loading) {
+    return <LoadingSpinner fullScreen />;
+  }
+
   return (
     <div>
       {/* Header */}
@@ -258,7 +283,7 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {statCards.map((stat, index) => (
+        {memoizedStatCards.map((stat, index) => (
           <StatCard key={index} {...stat} index={index} />
         ))}
       </div>

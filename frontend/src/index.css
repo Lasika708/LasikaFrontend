@@ -1,8 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+/* Performance optimizations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize animations */
+[class*="motion-"],
+[class*="animate-"] {
+  will-change: transform, opacity;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 
 @layer base {
   html {
@@ -12,6 +35,19 @@
   body {
     @apply font-sans antialiased;
     overflow-x: hidden;
+    background: #ffffff;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+  
+  #root {
+    min-height: 100vh;
+    background: #ffffff;
+  }
+  
+  /* Dark background only for specific sections if needed */
+  .dark-bg {
     background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 50%, #0A0A0A 100%);
     background-attachment: fixed;
   }

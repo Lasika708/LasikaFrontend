@@ -1,11 +1,11 @@
 import express from 'express';
 import {
-  getProjects,
-  getProject,
-  createProject,
-  updateProject,
-  deleteProject
-} from '../controllers/projectController.js';
+  getClients,
+  getClient,
+  createClient,
+  updateClient,
+  deleteClient
+} from '../controllers/clientController.js';
 import multer from 'multer';
 
 const router = express.Router();
@@ -26,22 +26,15 @@ const upload = multer({
   }
 });
 
-// Public routes - projects can be viewed without authentication
+// Public routes - clients can be viewed without authentication
 router.route('/')
-  .get(getProjects)
-  .post(upload.single('image'), createProject);
+  .get(getClients)
+  .post(upload.single('image'), createClient);
 
 router.route('/:id')
-  .get(getProject)
-  .put(upload.single('image'), updateProject)
-  .delete(deleteProject);
+  .get(getClient)
+  .put(upload.single('image'), updateClient)
+  .delete(deleteClient);
 
 export default router;
-
-
-
-
-
-
-
 

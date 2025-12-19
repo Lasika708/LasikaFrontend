@@ -1,12 +1,15 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, memo, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial } from '@react-three/drei';
+import { adminNavItems } from '../config/routes';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
-const FloatingSphere = () => {
+// Memoized 3D sphere component for better performance
+const FloatingSphere = memo(() => {
   return (
-    <Sphere args={[1, 100, 200]} scale={2}>
+    <Sphere args={[1, 64, 64]} scale={2}>
       <MeshDistortMaterial
         color="#2563EB"
         attach="material"
@@ -16,19 +19,16 @@ const FloatingSphere = () => {
       />
     </Sphere>
   );
-};
+});
 
-const AdminLayout = ({ children }) => {
+FloatingSphere.displayName = 'FloatingSphere';
+
+const AdminLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const menuItems = [
-    { path: '/admin', label: 'Dashboard', icon: '📊' },
-    { path: '/admin/projects', label: 'Projects', icon: '📁' },
-    { path: '/admin/clients', label: 'Clients', icon: '👥' },
-    { path: '/admin/contacts', label: 'Contact Submissions', icon: '📧' },
-    { path: '/admin/newsletter', label: 'Newsletter Subscribers', icon: '📬' },
-  ];
+  // Memoize menu items to prevent unnecessary re-renders
+  const menuItems = useMemo(() => adminNavItems, []);
 
   const sidebarVariants = {
     open: {
@@ -70,15 +70,21 @@ const AdminLayout = ({ children }) => {
         initial="open"
         animate={sidebarOpen ? 'open' : 'closed'}
       >
-        {/* 3D Background */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <Canvas camera={{ position: [0, 0, 5] }}>
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} />
-            <FloatingSphere />
-            <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
-          </Canvas>
-        </div>
+        {/* 3D Background - Optimized with lower quality when sidebar is closed */}
+        {sidebarOpen && (
+          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ willChange: 'transform' }}>
+            <Canvas 
+              camera={{ position: [0, 0, 5] }}
+              performance={{ min: 0.5 }}
+              dpr={[1, 1.5]}
+            >
+              <ambientLight intensity={0.5} />
+              <pointLight position={[10, 10, 10]} />
+              <FloatingSphere />
+              <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
+            </Canvas>
+          </div>
+        )}
 
         <div className="relative z-10 p-6 h-full flex flex-col">
           {/* Logo */}
@@ -216,9 +222,12 @@ const AdminLayout = ({ children }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              style={{ willChange: 'transform, opacity' }}
             >
-              {children}
+              <Suspense fallback={<LoadingSpinner />}>
+                <Outlet />
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </div>

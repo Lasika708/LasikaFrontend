@@ -1,62 +1,95 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { routes } from './config/routes';
+import LoadingSpinner from './components/common/LoadingSpinner';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import LandingPage from './pages/landing/LandingPage';
-import AdminLayout from './layouts/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ProjectsPage from './pages/admin/ProjectsPage';
-import ClientsPage from './pages/admin/ClientsPage';
-import ContactsPage from './pages/admin/ContactsPage';
-import NewsletterPage from './pages/admin/NewsletterPage';
+
+// Lazy load admin pages for code splitting (keep LandingPage loaded immediately)
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const ProjectsPage = lazy(() => import('./pages/admin/ProjectsPage'));
+const ClientsPage = lazy(() => import('./pages/admin/ClientsPage'));
+const ContactsPage = lazy(() => import('./pages/admin/ContactsPage'));
+const NewsletterPage = lazy(() => import('./pages/admin/NewsletterPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+        {/* Public Routes - Load immediately for faster initial render */}
         <Route path="/" element={<LandingPage />} />
         
-        {/* Admin Routes */}
+        {/* Admin Routes - Lazy loaded for better performance */}
         <Route
           path="/admin"
           element={
-            <AdminLayout>
-              <AdminDashboard />
-            </AdminLayout>
+            <Suspense fallback={<LoadingSpinner fullScreen />}>
+              <AdminLayout />
+            </Suspense>
           }
-        />
+        >
+          <Route
+            index
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <AdminDashboard />
+              </Suspense>
+            }
+          />
+          <Route
+            path="projects"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <ProjectsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="clients"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <ClientsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="contacts"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <ContactsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="newsletter"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <NewsletterPage />
+              </Suspense>
+            }
+          />
+          {/* Redirect /admin to /admin/dashboard */}
+          <Route path="dashboard" element={<Navigate to={routes.admin.dashboard} replace />} />
+        </Route>
+
+        {/* Redirect old admin routes to new structure */}
+        <Route path="/admin/dashboard" element={<Navigate to={routes.admin.dashboard} replace />} />
+        
+        {/* 404 Page */}
         <Route
-          path="/admin/projects"
+          path="*"
           element={
-            <AdminLayout>
-              <ProjectsPage />
-            </AdminLayout>
-          }
-        />
-        <Route
-          path="/admin/clients"
-          element={
-            <AdminLayout>
-              <ClientsPage />
-            </AdminLayout>
-          }
-        />
-        <Route
-          path="/admin/contacts"
-          element={
-            <AdminLayout>
-              <ContactsPage />
-            </AdminLayout>
-          }
-        />
-        <Route
-          path="/admin/newsletter"
-          element={
-            <AdminLayout>
-              <NewsletterPage />
-            </AdminLayout>
+            <Suspense fallback={<LoadingSpinner fullScreen />}>
+              <NotFound />
+            </Suspense>
           }
         />
       </Routes>
-    </Router>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
